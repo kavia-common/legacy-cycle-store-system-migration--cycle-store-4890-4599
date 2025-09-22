@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 
 const base = {
   dialect: process.env.DB_DIALECT || 'mysql',
@@ -11,8 +12,18 @@ const base = {
   dialectOptions: {}
 };
 
-if ((process.env.DB_SSL || 'false') === 'true') {
-  base.dialectOptions.ssl = { rejectUnauthorized: false };
+if ((process.env.DB_SSL || 'false').toLowerCase() === 'true') {
+  base.dialectOptions.ssl = {
+    rejectUnauthorized: (process.env.DB_SSL_REJECT_UNAUTHORIZED || 'true').toLowerCase() === 'true'
+  };
+  if (process.env.DB_SSL_CA && fs.existsSync(process.env.DB_SSL_CA)) {
+    try {
+      base.dialectOptions.ssl.ca = fs.readFileSync(process.env.DB_SSL_CA, 'utf8');
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Could not read DB_SSL_CA file:', e.message);
+    }
+  }
 }
 
 module.exports = {
