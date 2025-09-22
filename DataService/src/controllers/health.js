@@ -1,9 +1,11 @@
 const healthService = require('../services/health');
+const { pingDb } = require('../services/db-healthcheck');
 
 class HealthController {
-  check(req, res) {
+  async check(req, res) {
     const healthStatus = healthService.getStatus();
-    return res.status(200).json(healthStatus);
+    const dbStatus = await pingDb();
+    return res.status(200).json({ ...healthStatus, db: dbStatus });
   }
 }
 
