@@ -1,40 +1,23 @@
+'use strict';
+
+require('dotenv').config();
 const app = require('./app');
-const { sequelize } = require('./models');
+const db = require('./models');
 
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = process.env.PORT || 4010;
 
-(async () => {
-  try {
-    if (process.env.DB_SYNC === 'true') {
-      await sequelize.sync();
-    } else {
-      await sequelize.authenticate();
-    }
-  } catch (e) {
-    console.error('Database connection failed:', e.message);
-  }
-})();
-
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Server running at http://${HOST}:${PORT}`);
-});
-
-// Graceful shutdown
-const shutdown = async (signal) => {
-  console.log(`${signal} received: closing HTTP server`);
-  server.close(async () => {
-    try {
-      await sequelize.close();
-    } catch (e) {
-      // ignore
-    }
-    console.log('HTTP server closed');
-    process.exit(0);
+// Test database connection
+db.sequelize.authenticate()
+  .then(() => {
+    console.log('Database connection established successfully.');
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`DataService listening on port ${PORT}`);
+      console.log('API documentation available at /docs');
+    });
+  })
+  .catch(err => {
+    console.error('Unable to connect to the database:', err);
+    process.exit(1);
   });
-};
-
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
-
-module.exports = server;

@@ -2,53 +2,104 @@
 
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
-const { auditTrail } = require('../middleware/audit');
-const migrationService = require('../services/migrationService');
+const { requireRole } = require('../middleware/auth');
+const { importData, exportData } = require('../services/migrationService');
 
 /**
  * @swagger
  * tags:
  *   name: Migration
- *   description: Data import/export endpoints
+ *   description: Data migration endpoints
  */
 
 /**
  * @swagger
  * /api/v1/migration/import:
  *   post:
- *     summary: Import legacy data
+ *     summary: Import data from legacy system
  *     tags: [Migration]
- *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               source:
+ *                 type: string
+ *               target:
+ *                 type: string
+ *               options:
+ *                 type: object
  *     responses:
  *       200:
- *         description: Import result
+ *         description: Import successful
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Import failed
  */
-router.post('/import', requireAuth, requireRole('admin'), auditTrail('migration', 'import'), async (req, res, next) => {
+router.post('/import', requireRole('admin'), async (req, res, next) => {
   try {
-    const result = await migrationService.importData(req.body || {});
-    res.locals.auditEntityId = result.id;
-    res.json({ status: 'success', data: result });
-  } catch (e) { next(e); }
+    const result = await importData({
+      ...req.body,
+      options: {
+        ...req.body.options,
+        performedBy: req.user?.sub || req.user?.email
+      }
+    });
+    return res.json({
+      status: 'success',
+      data: result
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
 /**
  * @swagger
  * /api/v1/migration/export:
  *   post:
- *     summary: Export data
+ *     summary: Export data to specified target
  *     tags: [Migration]
- *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               source:
+ *                 type: string
+ *               target:
+ *                 type: string
+ *               options:
+ *                 type: object
  *     responses:
  *       200:
- *         description: Export result
+ *         description: Export successful
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Export failed
  */
-router.post('/export', requireAuth, requireRole('admin'), auditTrail('migration', 'export'), async (req, res, next) => {
+router.post('/export', requireRole('admin'), async (req, res, next) => {
   try {
-    const result = await migrationService.exportData(req.body || {});
-    res.locals.auditEntityId = 0;
-    res.json({ status: 'success', data: result });
-  } catch (e) { next(e); }
+    const result = await exportData({
+      ...req.body,
+      options: {
+        ...req.body.options,
+        performedBy: req.user?.sub || req.user?.email
+      }
+    });
+    return res.json({
+      status: 'success',
+      data: result
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
 module.exports = router;

@@ -1,18 +1,19 @@
-'use strict';
-
+/**
+ * OpenAPI-aligned routes mapping.
+ */
 const express = require('express');
 const router = express.Router();
+const entities = require('../controllers/entities');
 
 // PUBLIC_INTERFACE
-router.get('/health', (req, res) => {
-  /** Simple health endpoint for DataService bootstrap. */
-  res.status(200).json({
-    status: 'ok',
-    message: 'DataService is healthy',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
-  });
-});
+router.get('/:entity', entities.list);
+// PUBLIC_INTERFACE
+router.post('/:entity', entities.create);
+// PUBLIC_INTERFACE
+router.get('/:entity/:id', entities.getById);
+// PUBLIC_INTERFACE
+router.put('/:entity/:id', entities.update);
+// PUBLIC_INTERFACE
+router.delete('/:entity/:id', entities.remove);
 
 module.exports = router;
