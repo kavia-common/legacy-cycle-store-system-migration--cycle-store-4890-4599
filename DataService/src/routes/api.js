@@ -10,7 +10,8 @@ router.get('/health', (req, res) => {
     status: 'ok',
     message: 'DataService is healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
 });
 
